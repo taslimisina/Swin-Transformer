@@ -178,6 +178,9 @@ _C.NIH.trainset = ''
 _C.NIH.testset = ''
 # _C.NIH.class_num = -1
 
+# Attention visualization
+VIS_ATT = True
+
 
 def _update_config_from_file(config, cfg_file):
     config.defrost()
