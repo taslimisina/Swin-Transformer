@@ -172,12 +172,12 @@ def validate(data_loader, model):
 
 
 @torch.no_grad()
-def get_final_attention(layers_all_attn_weights, window_size=7, resolution=224):
+def get_final_attention(layers_all_attn_weights, b, window_size=7, resolution=224):
     xs = []
     for all_attn_weights in layers_all_attn_weights:
         for attn_weights in all_attn_weights:
             print(attn_weights.shape)
-            b = attn_weights.shape[0]
+            # b = attn_weights.shape[0]
             x = torch.mean(attn_weights, dim=1)
             print(x.shape)
             x = torch.mean(x, dim=1)
@@ -247,7 +247,7 @@ def validate_attention(data_loader, model):
         output, layers_all_attn_weights = model(images)
         
         # get final attention
-        final_attns = get_final_attention(layers_all_attn_weights)
+        final_attns = get_final_attention(layers_all_attn_weights, b)
 
         # sorting attentions of pictures
         sorted_attns = []       # batch * (224/4 * 224/4)
