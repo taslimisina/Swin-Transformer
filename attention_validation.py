@@ -112,14 +112,14 @@ def validate(data_loader, model):
             # measure accuracy and record loss
             loss = criterion(output[i], target[i])
             # acc1, acc5 = accuracy(output, target, topk=(1, 5))
-            acc1 = accuracy(output[i], target[i], topk=(1,))
-            acc1 = torch.Tensor(acc1).to(device='cuda')   # wtf? without this added line it get's error in reduce_tensor because it's a list. So the original code shouldn't work too!?
-            acc1 = reduce_tensor(acc1)
+            # acc1 = accuracy(output[i], target[i], topk=(1,))
+            # acc1 = torch.Tensor(acc1).to(device='cuda')   # wtf? without this added line it get's error in reduce_tensor because it's a list. So the original code shouldn't work too!?
+            # acc1 = reduce_tensor(acc1)
             # acc5 = reduce_tensor(acc5)
-            loss = reduce_tensor(loss)
+            # loss = reduce_tensor(loss)
 
-            loss_meter[i].update(loss.item(), target[i].size(0))
-            acc1_meter[i].update(acc1.item(), target[i].size(0))
+            # loss_meter[i].update(loss.item(), target[i].size(0))
+            # acc1_meter[i].update(acc1.item(), target[i].size(0))
             # acc5_meter.update(acc5.item(), target.size(0))
 
             # auc
@@ -139,34 +139,34 @@ def validate(data_loader, model):
             batch_time[i].update(time.time() - end)
             end = time.time()
 
-            if idx % PRINT_FREQ == 0:
-                memory_used = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
-                print(
-                    f'Test: [{idx}/{len(data_loader)}]\t'
-                    f'Time {batch_time[i].val:.3f} ({batch_time[i].avg:.3f})\t'
-                    f'Loss {loss_meter[i].val:.4f} ({loss_meter[i].avg:.4f})\t'
-                    f'Acc@1 {acc1_meter[i].val:.3f} ({acc1_meter[i].avg:.3f})\t'
-                    f'Acc@5 {acc5_meter[i].val:.3f} ({acc5_meter[i].avg:.3f})\t'
-                    f'Mem {memory_used:.0f}MB\t'
-                    f'Class {i}')
+            # if idx % PRINT_FREQ == 0:
+            #     memory_used = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
+            #     print(
+            #         f'Test: [{idx}/{len(data_loader)}]\t'
+            #         f'Time {batch_time[i].val:.3f} ({batch_time[i].avg:.3f})\t'
+                    # f'Loss {loss_meter[i].val:.4f} ({loss_meter[i].avg:.4f})\t'
+                    # f'Acc@1 {acc1_meter[i].val:.3f} ({acc1_meter[i].avg:.3f})\t'
+                    # f'Acc@5 {acc5_meter[i].val:.3f} ({acc5_meter[i].avg:.3f})\t'
+                    # f'Mem {memory_used:.0f}MB\t'
+                    # f'Class {i}')
 
     for i in range(14):
-        print(f' * Acc@1 {acc1_meter[i].avg:.3f} Acc@5 {acc5_meter[i].avg:.3f}')
+        # print(f' * Acc@1 {acc1_meter[i].avg:.3f} Acc@5 {acc5_meter[i].avg:.3f}')
 
         # auc
         all_preds[i], all_label[i] = all_preds[i][0], all_label[i][0]
         auc = roc_auc_score(all_label[i], all_preds[i][:, 1], multi_class='ovr')
         print("Valid AUC: %2.5f" % auc)
 
-        acc1s.append(acc1_meter[i].avg)
-        acc5s.append(acc5_meter[i].avg)
-        losses.append(loss_meter[i].avg)
+        # acc1s.append(acc1_meter[i].avg)
+        # acc5s.append(acc5_meter[i].avg)
+        # losses.append(loss_meter[i].avg)
         aucs.append(auc)
 
     from statistics import mean
     print("MEAN AUC: %2.5f" % mean(aucs))
 
-    return mean(acc1s), mean(acc5s), mean(losses)
+    # return mean(acc1s), mean(acc5s), mean(losses)
 
 
 @torch.no_grad()
@@ -324,7 +324,7 @@ def validate_attention(data_loader, model):
 def main():
     model = init_model()
     dataloader_test = init_dataloader()
-    acc1, acc5, loss = validate(dataloader_test, model)
+    validate(dataloader_test, model)
     print(f"Mean Accuracy of the network on the {len(dataset_val)} test images: {acc1:.1f}%")
 
     validate_attention(dataloader_test, model)
