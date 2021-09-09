@@ -280,15 +280,15 @@ def validate_attention(data_loader, model):
                 # measure accuracy and record loss
                 loss = criterion(output[i], target[i])
                 # acc1, acc5 = accuracy(output, target, topk=(1, 5))
-                acc1 = accuracy(output[i], target[i], topk=(1,))
-                acc1 = torch.Tensor(acc1).to(
-                    device='cuda')  # wtf? without this added line it get's error in reduce_tensor because it's a list. So the original code shouldn't work too!?
-                acc1 = reduce_tensor(acc1)
+                # acc1 = accuracy(output[i], target[i], topk=(1,))
+                # acc1 = torch.Tensor(acc1).to(
+                #     device='cuda')  # wtf? without this added line it get's error in reduce_tensor because it's a list. So the original code shouldn't work too!?
+                # acc1 = reduce_tensor(acc1)
                 # acc5 = reduce_tensor(acc5)
-                loss = reduce_tensor(loss)
+                # loss = reduce_tensor(loss)
 
-                loss_meter[i].update(loss.item(), target[i].size(0))
-                acc1_meter[i].update(acc1.item(), target[i].size(0))
+                # loss_meter[i].update(loss.item(), target[i].size(0))
+                # acc1_meter[i].update(acc1.item(), target[i].size(0))
                 # acc5_meter.update(acc5.item(), target.size(0))
 
                 # auc
