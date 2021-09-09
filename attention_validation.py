@@ -200,6 +200,7 @@ def get_final_attention(layers_all_attn_weights, window_size=7, resolution=224):
         for j in range(finalx.shape[0]):
             print("j:", j)
             print("finalx[j].shape:", finalx[j].shape)
+            print("xs[i].shape", xs[i].shape)
             print("xs[i][j].shape:", xs[i][j].shape)
             finalx[j] = finalx[j] * xs[i][j]
     mx = torch.max(finalx.view(finalx.shape[0], -1), dim=1)[0]
