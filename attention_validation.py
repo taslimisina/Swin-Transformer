@@ -149,6 +149,8 @@ def validate(data_loader, model):
                     # f'Acc@5 {acc5_meter[i].val:.3f} ({acc5_meter[i].avg:.3f})\t'
                     # f'Mem {memory_used:.0f}MB\t'
                     # f'Class {i}')
+        if idx % PRINT_FREQ == 0:
+            print(f'Test: [{idx}/{len(data_loader)}')
 
     for i in range(14):
         # print(f' * Acc@1 {acc1_meter[i].avg:.3f} Acc@5 {acc5_meter[i].avg:.3f}')
