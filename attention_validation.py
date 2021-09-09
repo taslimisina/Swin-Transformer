@@ -21,7 +21,7 @@ to_img = ToPILImage()
 # checkpoint_path = "/content/drive/MyDrive/Research/transformer/swin/checkpoints/nih_2linear_1node_batch32_v3(w.o.pretrain)/ckpt_epoch_150.pth"
 checkpoint_path = "/mnt/sda1/datasets/sina/swin_transformer/attention_validation/model/ckpt_epoch_150.pth"
 test_csv_path = '/mnt/sda1/datasets/sina/transformer/csv/test_without_nofinding.csv'
-TESTSET = '/mnt/sda1/project/nih-preprocess/Dataset/all_resized256/'
+TESTSET = '/mnt/sda1/project/nih-preprocess/Dataset/test2_resized256/'
 PRINT_FREQ = 10
 INTERPOLATION = 'bicubic'
 # validation
@@ -325,7 +325,7 @@ def main():
     model = init_model()
     dataloader_test = init_dataloader()
     validate(dataloader_test, model)
-    print(f"Mean Accuracy of the network on the {len(dataset_val)} test images: {acc1:.1f}%")
+    # print(f"Mean Accuracy of the network on the {len(dataset_val)} test images: {acc1:.1f}%")
 
     validate_attention(dataloader_test, model)
 
