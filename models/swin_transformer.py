@@ -541,8 +541,21 @@ class SwinTransformer(nn.Module):
         self.norm = norm_layer(self.num_features)
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.heads = nn.ModuleList()
+        self.heads2 = nn.ModuleList()
+        # self.heads3 = nn.ModuleList()
+        # self.heads4 = nn.ModuleList()
+        self.relu = nn.ReLU()  # for 1 or more heads
         for i in range(num_classes):
-            self.heads.append(nn.Linear(self.num_features, 2))     # todo more linear layers because of multihead?
+            # self.heads.append(nn.Linear(self.num_features, 2))  # no head
+            self.heads.append(nn.Linear(self.num_features, 48))   # 1 head
+            self.heads2.append(nn.Linear(48, 2))    # 1 head
+            # self.heads.append(nn.Linear(self.num_features, 384))    # 2 head
+            # self.heads2.append(nn.Linear(384, 48))  # 2 head
+            # self.heads3.append(nn.Linear(48, 2))    # 2 head
+            # self.heads.append(nn.Linear(self.num_features, 384))  # 3 head
+            # self.heads2.append(nn.Linear(384, 48))  # 3 head
+            # self.heads3.append(nn.Linear(48, 48))  # 3 head
+            # self.heads4.append(nn.Linear(48, 2))  # 3 head
 
         self.apply(self._init_weights)
 
@@ -582,8 +595,12 @@ class SwinTransformer(nn.Module):
     def forward(self, x):
         x, layers_all_attn_weights = self.forward_features(x)
         y = []
-        for head in self.heads:
-            y.append(head(x))
+        for i in range(len(self.heads)):
+            # y.append(self.heads[i](x))      # no heads
+            y.append(self.heads2[i](self.relu(self.heads[i](x))))  # 1 head
+            # y.append(self.heads3[i](self.relu(self.heads2[i](self.relu(self.heads[i](x))))))  # 2 head
+            # y.append(
+            #     self.heads4[i](self.relu(self.heads3[i](self.relu(self.heads2[i](self.relu(self.heads[i](x))))))))  # 3 head
         if config.VIS_ATT:
             return y, layers_all_attn_weights
         return y
