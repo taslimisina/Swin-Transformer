@@ -28,7 +28,7 @@ INTERPOLATION = 'bicubic'
 NUM_OPERATIONS = 60
 NUM_PATCH_NOISING = 5
 
-BATCH_SIZE = 8
+BATCH_SIZE = 4
 NUM_WORKERS = 2
 PIN_MEMORY = True
 
@@ -176,7 +176,7 @@ def get_final_attention(layers_all_attn_weights, b, window_size=7, resolution=22
     xs = []
     for all_attn_weights in layers_all_attn_weights:
         for attn_weights in all_attn_weights:
-            print(attn_weights.shape)
+            # print(attn_weights.shape)
             # b = attn_weights.shape[0]
             x = torch.mean(attn_weights, dim=1)
             # print(x.shape)
