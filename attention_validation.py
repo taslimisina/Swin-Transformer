@@ -18,9 +18,10 @@ from models.custom_image_folder import MyImageFolder
 IMG_SIZE = 224
 DATA_INTERPOLATION = 'bicubic'
 to_img = ToPILImage()
-checkpoint_path = "/content/drive/MyDrive/Research/transformer/swin/checkpoints/nih_2linear_1node_batch32_v3(w.o.pretrain)/ckpt_epoch_150.pth"
+# checkpoint_path = "/content/drive/MyDrive/Research/transformer/swin/checkpoints/nih_2linear_1node_batch32_v3(w.o.pretrain)/ckpt_epoch_150.pth"
+checkpoint_path = "/mnt/sda1/datasets/sina/swin_transformer/attention_validation/ckpt_epoch_150.pth"
 test_csv_path = '/mnt/sda1/datasets/sina/transformer/csv/test_without_nofinding.csv'
-TESTSET = ''
+TESTSET = '/mnt/sda1/project/nih-preprocess/Dataset/all_resized256/'
 PRINT_FREQ = 10
 INTERPOLATION = 'bicubic'
 # validation
