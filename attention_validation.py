@@ -44,6 +44,7 @@ def init_model():
                             window_size=7)
     checkpoint = torch.load(checkpoint_path)
     model.load_state_dict(checkpoint['model'])
+    model.to('cuda')
     return model
 
 
