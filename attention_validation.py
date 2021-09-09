@@ -149,8 +149,8 @@ def validate(data_loader, model):
                     # f'Acc@5 {acc5_meter[i].val:.3f} ({acc5_meter[i].avg:.3f})\t'
                     # f'Mem {memory_used:.0f}MB\t'
                     # f'Class {i}')
-        if idx % PRINT_FREQ == 0:
-            print(f'Test: [{idx}/{len(data_loader)}')
+        # if idx % PRINT_FREQ == 0:
+        #     print(f'Test: [{idx}/{len(data_loader)}')
 
     for i in range(14):
         # print(f' * Acc@1 {acc1_meter[i].avg:.3f} Acc@5 {acc5_meter[i].avg:.3f}')
@@ -194,9 +194,11 @@ def get_final_attention(layers_all_attn_weights, window_size=7, resolution=224):
                 x[i] = x[i] * scale[i]
             xs.append(x)
     finalx = xs[0]
+    print("finalx.shape:", finalx.shape)
     for i in range(1, len(xs)):
+        print("i:", i)
         for j in range(finalx.shape[0]):
-            finalx[j] *= xs[i][j]
+            finalx[j] = finalx[j] * xs[i][j]
     mx = torch.max(finalx.view(finalx.shape[0], -1), dim=1)[0]
     scale = 1 / mx
     mask = finalx
@@ -326,7 +328,7 @@ def validate_attention(data_loader, model):
 def main():
     model = init_model()
     dataloader_test = init_dataloader()
-    validate(dataloader_test, model)
+    # validate(dataloader_test, model)
     # print(f"Mean Accuracy of the network on the {len(dataset_val)} test images: {acc1:.1f}%")
 
     validate_attention(dataloader_test, model)
