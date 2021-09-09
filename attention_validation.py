@@ -176,23 +176,37 @@ def get_final_attention(layers_all_attn_weights, window_size=7, resolution=224):
     xs = []
     for all_attn_weights in layers_all_attn_weights:
         for attn_weights in all_attn_weights:
+            print(attn_weights.shape)
             b = attn_weights.shape[0]
             x = torch.mean(attn_weights, dim=1)
+            print(x.shape)
             x = torch.mean(x, dim=1)
+            print(x.shape)
             bnw = x.shape[0]
             sqnw = int(math.sqrt(bnw / b))
             x = x.reshape((b, sqnw, sqnw, window_size, window_size))  # todo needed?
+            print(x.shape)
             x = x.transpose(2, 3)  # todo needed?
+            print(x.shape)
             x = x.reshape((b, sqnw * window_size, sqnw * window_size))
+            print(x.shape)
             x = x.unsqueeze(0)
+            print(x.shape)
             x = F.interpolate(x, size=(resolution, resolution))
+            print(x.shape)
             x = x.squeeze(0)
+            print(x.shape)
             # x = x + 0.05
             mx = torch.max(x.view(b, -1), dim=1)[0]
+            print(mx.shape)
             scale = 1 / mx
+            print(scale.shape)
             for i in range(b):
                 x[i] = x[i] * scale[i]
+            print(x.shape)
             xs.append(x)
+            import sys
+            sys.exit("finish")
     finalx = xs[0]
     print("finalx.shape:", finalx.shape)
     for i in range(1, len(xs)):
