@@ -11,6 +11,7 @@ import time
 from sklearn.metrics import roc_auc_score
 from utils import load_checkpoint, save_checkpoint, get_grad_norm, auto_resume_helper, reduce_tensor
 import random
+import torch.backends.cudnn as cudnn
 
 from models.swin_transformer import SwinTransformer
 from models.custom_image_folder import MyImageFolder
@@ -34,6 +35,7 @@ PIN_MEMORY = True
 
 
 def init_model():
+    cudnn.benchmark = True
     model = SwinTransformer(img_size=224,
                             patch_size=4,
                             in_chans=3,
@@ -84,17 +86,9 @@ def init_dataloader():
 
 @torch.no_grad()
 def validate(data_loader, model):
-    criterion = torch.nn.CrossEntropyLoss()
     model.eval()
 
     batch_time = [AverageMeter() for _ in range(14)]
-    loss_meter = [AverageMeter() for _ in range(14)]
-    acc1_meter = [AverageMeter() for _ in range(14)]
-    acc5_meter = [AverageMeter() for _ in range(14)]
-
-    acc1s = []
-    acc5s = []
-    losses = []
     aucs = []
 
     end = time.time()
@@ -109,19 +103,6 @@ def validate(data_loader, model):
         output, layers_all_attn_weights = model(images)
 
         for i in range(len(target)):
-            # measure accuracy and record loss
-            loss = criterion(output[i], target[i])
-            # acc1, acc5 = accuracy(output, target, topk=(1, 5))
-            # acc1 = accuracy(output[i], target[i], topk=(1,))
-            # acc1 = torch.Tensor(acc1).to(device='cuda')   # wtf? without this added line it get's error in reduce_tensor because it's a list. So the original code shouldn't work too!?
-            # acc1 = reduce_tensor(acc1)
-            # acc5 = reduce_tensor(acc5)
-            # loss = reduce_tensor(loss)
-
-            # loss_meter[i].update(loss.item(), target[i].size(0))
-            # acc1_meter[i].update(acc1.item(), target[i].size(0))
-            # acc5_meter.update(acc5.item(), target.size(0))
-
             # auc
             preds = F.softmax(output[i], dim=1)
             if len(all_preds[i]) == 0:
@@ -139,36 +120,15 @@ def validate(data_loader, model):
             batch_time[i].update(time.time() - end)
             end = time.time()
 
-            # if idx % PRINT_FREQ == 0:
-            #     memory_used = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
-            #     print(
-            #         f'Test: [{idx}/{len(data_loader)}]\t'
-            #         f'Time {batch_time[i].val:.3f} ({batch_time[i].avg:.3f})\t'
-                    # f'Loss {loss_meter[i].val:.4f} ({loss_meter[i].avg:.4f})\t'
-                    # f'Acc@1 {acc1_meter[i].val:.3f} ({acc1_meter[i].avg:.3f})\t'
-                    # f'Acc@5 {acc5_meter[i].val:.3f} ({acc5_meter[i].avg:.3f})\t'
-                    # f'Mem {memory_used:.0f}MB\t'
-                    # f'Class {i}')
-        # if idx % PRINT_FREQ == 0:
-        #     print(f'Test: [{idx}/{len(data_loader)}')
-
     for i in range(14):
-        # print(f' * Acc@1 {acc1_meter[i].avg:.3f} Acc@5 {acc5_meter[i].avg:.3f}')
-
         # auc
         all_preds[i], all_label[i] = all_preds[i][0], all_label[i][0]
         auc = roc_auc_score(all_label[i], all_preds[i][:, 1], multi_class='ovr')
         print("Valid AUC: %2.5f" % auc)
-
-        # acc1s.append(acc1_meter[i].avg)
-        # acc5s.append(acc5_meter[i].avg)
-        # losses.append(loss_meter[i].avg)
         aucs.append(auc)
 
     from statistics import mean
     print("MEAN AUC: %2.5f" % mean(aucs))
-
-    # return mean(acc1s), mean(acc5s), mean(losses)
 
 
 @torch.no_grad()
@@ -176,46 +136,25 @@ def get_final_attention(layers_all_attn_weights, b, window_size=7, resolution=22
     xs = []
     for all_attn_weights in layers_all_attn_weights:
         for attn_weights in all_attn_weights:
-            # print(attn_weights.shape)
-            # b = attn_weights.shape[0]
             x = torch.mean(attn_weights, dim=1)
-            # print(x.shape)
             x = torch.mean(x, dim=1)
-            # print(x.shape)
             bnw = x.shape[0]
             sqnw = int(math.sqrt(bnw / b))
             x = x.reshape((b, sqnw, sqnw, window_size, window_size))  # todo needed?
-            # print(x.shape)
             x = x.transpose(2, 3)  # todo needed?
-            # print(x.shape)
             x = x.reshape((b, sqnw * window_size, sqnw * window_size))
-            # print(x.shape)
             x = x.unsqueeze(0)
-            # print(x.shape)
             x = F.interpolate(x, size=(resolution, resolution))
-            # print(x.shape)
             x = x.squeeze(0)
-            # print(x.shape)
             # x = x + 0.05
             mx = torch.max(x.view(b, -1), dim=1)[0]
-            # print(mx.shape)
             scale = 1 / mx
-            # print(scale.shape)
             for i in range(b):
                 x[i] = x[i] * scale[i]
-            # print(x.shape)
             xs.append(x)
-            # import sys
-            # sys.exit("finish")
     finalx = xs[0]
-    # print("finalx.shape:", finalx.shape)
     for i in range(1, len(xs)):
-        # print("i:", i)
         for j in range(finalx.shape[0]):
-            # print("j:", j)
-            # print("finalx[j].shape:", finalx[j].shape)
-            # print("xs[i].shape", xs[i].shape)
-            # print("xs[i][j].shape:", xs[i][j].shape)
             finalx[j] = finalx[j] * xs[i][j]
     mx = torch.max(finalx.view(finalx.shape[0], -1), dim=1)[0]
     scale = 1 / mx
@@ -230,9 +169,6 @@ def validate_attention(data_loader, model):
     model.eval()
 
     batch_time = [AverageMeter() for _ in range(14)]
-    loss_meter = [AverageMeter() for _ in range(14)]
-    acc1_meter = [AverageMeter() for _ in range(14)]
-    acc5_meter = [AverageMeter() for _ in range(14)]
 
     end = time.time()
     all_preds = [[[] for _ in range(14)] for __ in range(NUM_OPERATIONS)]
@@ -277,20 +213,6 @@ def validate_attention(data_loader, model):
             # calculate auc
             output, layers_all_attn_weights = model(images)
             for i in range(len(target)):
-                # measure accuracy and record loss
-                loss = criterion(output[i], target[i])
-                # acc1, acc5 = accuracy(output, target, topk=(1, 5))
-                # acc1 = accuracy(output[i], target[i], topk=(1,))
-                # acc1 = torch.Tensor(acc1).to(
-                #     device='cuda')  # wtf? without this added line it get's error in reduce_tensor because it's a list. So the original code shouldn't work too!?
-                # acc1 = reduce_tensor(acc1)
-                # acc5 = reduce_tensor(acc5)
-                # loss = reduce_tensor(loss)
-
-                # loss_meter[i].update(loss.item(), target[i].size(0))
-                # acc1_meter[i].update(acc1.item(), target[i].size(0))
-                # acc5_meter.update(acc5.item(), target.size(0))
-
                 # auc
                 preds = F.softmax(output[i], dim=1)
                 if len(all_preds[operation][i]) == 0:
@@ -312,12 +234,7 @@ def validate_attention(data_loader, model):
             memory_used = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
             print(
                 f'Test: [{idx}/{len(data_loader)}]\t'
-                # f'Time {batch_time[i].val:.3f} ({batch_time[i].avg:.3f})\t'
-                # f'Loss {loss_meter[i].val:.4f} ({loss_meter[i].avg:.4f})\t'
-                # f'Acc@1 {acc1_meter[i].val:.3f} ({acc1_meter[i].avg:.3f})\t'
-                # f'Acc@5 {acc5_meter[i].val:.3f} ({acc5_meter[i].avg:.3f})\t'
                 f'Mem {memory_used:.0f}MB\t'
-                # f'Class {i}'
             , flush=True)
 
 
@@ -325,30 +242,20 @@ def validate_attention(data_loader, model):
     for operation in range(NUM_OPERATIONS):
         aucs = []
         for i in range(14):
-            # print(f' * Acc@1 {acc1_meter[i].avg:.3f} Acc@5 {acc5_meter[i].avg:.3f}')
-
             # auc
             all_preds[operation][i], all_label[operation][i] = all_preds[operation][i][0], all_label[operation][i][0]
             auc = roc_auc_score(all_label[operation][i], all_preds[operation][i][:, 1], multi_class='ovr')
             print(f'Test AUC: {auc:2.5f}    Class: {i}  Noisy_patches: {(operation+1) * NUM_PATCH_NOISING}')
-
-            # acc1s.append(acc1_meter[i].avg)
-            # acc5s.append(acc5_meter[i].avg)
-            # losses.append(loss_meter[i].avg)
             aucs.append(auc)
 
         from statistics import mean
         print(f'MEAN Test AUC: {mean(aucs):2.5f}    Noisy_patches: {(operation+1) * NUM_PATCH_NOISING}')
-
-    # return mean(acc1s), mean(acc5s), mean(losses)
 
 
 def main():
     model = init_model()
     dataloader_test = init_dataloader()
     # validate(dataloader_test, model)
-    # print(f"Mean Accuracy of the network on the {len(dataset_val)} test images: {acc1:.1f}%")
-
     validate_attention(dataloader_test, model)
 
 
