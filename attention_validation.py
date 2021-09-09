@@ -179,43 +179,43 @@ def get_final_attention(layers_all_attn_weights, b, window_size=7, resolution=22
             print(attn_weights.shape)
             # b = attn_weights.shape[0]
             x = torch.mean(attn_weights, dim=1)
-            print(x.shape)
+            # print(x.shape)
             x = torch.mean(x, dim=1)
-            print(x.shape)
+            # print(x.shape)
             bnw = x.shape[0]
             sqnw = int(math.sqrt(bnw / b))
             x = x.reshape((b, sqnw, sqnw, window_size, window_size))  # todo needed?
-            print(x.shape)
+            # print(x.shape)
             x = x.transpose(2, 3)  # todo needed?
-            print(x.shape)
+            # print(x.shape)
             x = x.reshape((b, sqnw * window_size, sqnw * window_size))
-            print(x.shape)
+            # print(x.shape)
             x = x.unsqueeze(0)
-            print(x.shape)
+            # print(x.shape)
             x = F.interpolate(x, size=(resolution, resolution))
-            print(x.shape)
+            # print(x.shape)
             x = x.squeeze(0)
-            print(x.shape)
+            # print(x.shape)
             # x = x + 0.05
             mx = torch.max(x.view(b, -1), dim=1)[0]
-            print(mx.shape)
+            # print(mx.shape)
             scale = 1 / mx
-            print(scale.shape)
+            # print(scale.shape)
             for i in range(b):
                 x[i] = x[i] * scale[i]
-            print(x.shape)
+            # print(x.shape)
             xs.append(x)
-            import sys
-            sys.exit("finish")
+            # import sys
+            # sys.exit("finish")
     finalx = xs[0]
-    print("finalx.shape:", finalx.shape)
+    # print("finalx.shape:", finalx.shape)
     for i in range(1, len(xs)):
-        print("i:", i)
+        # print("i:", i)
         for j in range(finalx.shape[0]):
-            print("j:", j)
-            print("finalx[j].shape:", finalx[j].shape)
-            print("xs[i].shape", xs[i].shape)
-            print("xs[i][j].shape:", xs[i][j].shape)
+            # print("j:", j)
+            # print("finalx[j].shape:", finalx[j].shape)
+            # print("xs[i].shape", xs[i].shape)
+            # print("xs[i][j].shape:", xs[i][j].shape)
             finalx[j] = finalx[j] * xs[i][j]
     mx = torch.max(finalx.view(finalx.shape[0], -1), dim=1)[0]
     scale = 1 / mx
@@ -318,7 +318,7 @@ def validate_attention(data_loader, model):
                 # f'Acc@5 {acc5_meter[i].val:.3f} ({acc5_meter[i].avg:.3f})\t'
                 f'Mem {memory_used:.0f}MB\t'
                 # f'Class {i}'
-            )
+            , flush=True)
 
 
 
