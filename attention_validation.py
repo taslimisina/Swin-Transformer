@@ -192,7 +192,7 @@ def validate_attention(data_loader, model):
             for i in range(0, 224, 4):
                 for j in range(0, 224, 4):
                     sorted_attn.append((attn[i][j].item(), (i, j)))
-            sorted_attns.append(sorted(sorted_attn))
+            sorted_attns.append(sorted(sorted_attn, reverse=True))
 
         # noising images in most attentioned patches and calculating aucs
         curr_noising = 0
