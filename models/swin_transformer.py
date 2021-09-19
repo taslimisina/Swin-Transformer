@@ -233,10 +233,10 @@ class SwinTransformerBlock(nn.Module):
         self.register_buffer("attn_mask", attn_mask)
 
         self.activations = None
-        self.activations_gradients = None
+        self.activations_gradient = None
 
     def activations_hook(self, grad):
-        self.activations_gradients = grad
+        self.activations_gradient = grad
 
     def forward(self, x):
         H, W = self.input_resolution
@@ -301,8 +301,8 @@ class SwinTransformerBlock(nn.Module):
     def get_activations(self):
         return self.activations
 
-    def get_activations_gradients(self):
-        return self.activations_gradients
+    def get_activations_gradient(self):
+        return self.activations_gradient
 
 
 class PatchMerging(nn.Module):
@@ -403,7 +403,7 @@ class BasicLayer(nn.Module):
             self.downsample = None
 
         self.activations = None
-        self.activations_gradients = None
+        self.activations_gradient = None
 
     def forward(self, x):
         all_attn_weights = []
@@ -415,7 +415,7 @@ class BasicLayer(nn.Module):
                 if blk.shift_size == 0: #todo also add shifted windows' attention
                     all_attn_weights.append(attn_weights)
         self.activations = self.blocks[-1].get_activations()
-        self.activations_gradients = self.blocks[-1].get_activations_gradients()
+        self.activations_gradient = self.blocks[-1].get_activations_gradient()
         if self.downsample is not None:
             x = self.downsample(x)
         return x, all_attn_weights
@@ -434,8 +434,8 @@ class BasicLayer(nn.Module):
     def get_activations(self):
         return self.activations
 
-    def get_activations_gradients(self):
-        return self.activations_gradients
+    def get_activations_gradient(self):
+        return self.activations_gradient
 
 
 class PatchEmbed(nn.Module):
