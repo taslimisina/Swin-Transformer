@@ -232,6 +232,12 @@ class SwinTransformerBlock(nn.Module):
 
         self.register_buffer("attn_mask", attn_mask)
 
+        self.activations = None
+        self.activations_gradients = None
+
+    def activations_hook(self, grad):
+        self.activations_gradients = grad
+
     def forward(self, x):
         H, W = self.input_resolution
         B, L, C = x.shape
@@ -240,6 +246,9 @@ class SwinTransformerBlock(nn.Module):
         shortcut = x
         x = self.norm1(x)
         x = x.view(B, H, W, C)
+
+        self.activations = x.detach()
+        h = x.register_hook(self.activations_hook)
 
         # cyclic shift
         if self.shift_size > 0:
@@ -288,6 +297,12 @@ class SwinTransformerBlock(nn.Module):
         # norm2
         flops += self.dim * H * W
         return flops
+
+    def get_activations(self):
+        return self.activations
+
+    def get_activations_gradients(self):
+        return self.activations_gradients
 
 
 class PatchMerging(nn.Module):
@@ -387,6 +402,9 @@ class BasicLayer(nn.Module):
         else:
             self.downsample = None
 
+        self.activations = None
+        self.activations_gradients = None
+
     def forward(self, x):
         all_attn_weights = []
         for blk in self.blocks:
@@ -396,6 +414,8 @@ class BasicLayer(nn.Module):
                 x, attn_weights = blk(x)
                 if blk.shift_size == 0: #todo also add shifted windows' attention
                     all_attn_weights.append(attn_weights)
+        self.activations = self.blocks[-1].get_activations()
+        self.activations_gradients = self.blocks[-1].get_activations_gradients()
         if self.downsample is not None:
             x = self.downsample(x)
         return x, all_attn_weights
@@ -410,6 +430,12 @@ class BasicLayer(nn.Module):
         if self.downsample is not None:
             flops += self.downsample.flops()
         return flops
+
+    def get_activations(self):
+        return self.activations
+
+    def get_activations_gradients(self):
+        return self.activations_gradients
 
 
 class PatchEmbed(nn.Module):
@@ -558,6 +584,8 @@ class SwinTransformer(nn.Module):
             # self.heads4.append(nn.Linear(48, 2))  # 3 head
 
         self.apply(self._init_weights)
+        self.activations_gradient = None
+        self.activations = None
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -586,6 +614,8 @@ class SwinTransformer(nn.Module):
         for layer in self.layers:
             x, all_attn_weights = layer(x)
             layers_all_attn_weights.append(all_attn_weights)
+        self.activations= self.layers[-1].get_activations()
+        self.activations_gradient = self.layers[-1].get_activations_gradient()
 
         x = self.norm(x)  # B L C
         x = self.avgpool(x.transpose(1, 2))  # B C 1
@@ -613,3 +643,9 @@ class SwinTransformer(nn.Module):
         flops += self.num_features * self.patches_resolution[0] * self.patches_resolution[1] // (2 ** self.num_layers)
         flops += self.num_features * self.num_classes
         return flops
+
+    def get_activations_gradient(self):
+        return self.activations_gradient
+
+    def get_activations(self):
+        return self.activations
